@@ -1,8 +1,8 @@
-// GET /api/expenses/export - Export expenses to CSV
+// GET /api/expenses/export - Export expenses to Excel
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/middleware';
 import { supabaseAdmin } from '@/lib/db';
-import { expensesToCSV } from '@/lib/csv';
+import { expensesToExcel } from '@/lib/excel';
 
 async function handler(req: NextRequest & { user?: any }) {
   try {
@@ -35,8 +35,8 @@ async function handler(req: NextRequest & { user?: any }) {
       } else {
         return new NextResponse('', {
           headers: {
-            'Content-Type': 'text/csv',
-            'Content-Disposition': `attachment; filename="expenses-${Date.now()}.csv"`,
+            'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition': `attachment; filename="expenses-${Date.now()}.xlsx"`,
           },
         });
       }
@@ -79,24 +79,42 @@ async function handler(req: NextRequest & { user?: any }) {
         .in('id', driverIds);
 
       const driverMap = new Map((drivers || []).map((d: any) => [d.id, d.name]));
-      const expensesWithNames = (data || []).map((expense: any) => ({
-        ...expense,
-        driver_name: driverMap.get(expense.driver_id) || null,
-      }));
+      const expensesWithNames = (data || []).map((expense: any) => {
+        let driverName = expense.driver_name;
+        let vehicleNumber = expense.expense_vehicle_number;
 
-      const csvContent = expensesToCSV(expensesWithNames);
-      return new NextResponse(csvContent, {
+        // If driver_name is not in expense, try to get from driverMap
+        if (!driverName && expense.driver_id) {
+          driverName = driverMap.get(expense.driver_id);
+        }
+
+        // If driver is deleted (driver_id is null) or name not found, use preserved vehicle number
+        if (!driverName && !expense.driver_id) {
+          driverName = vehicleNumber ? `${vehicleNumber} (Deleted Driver)` : 'Deleted Driver';
+        } else if (!driverName && expense.driver_id) {
+          driverName = vehicleNumber ? `${vehicleNumber} (Deleted Driver)` : 'Unknown Driver';
+        }
+
+        return {
+          ...expense,
+          driver_name: driverName,
+          expense_vehicle_number: vehicleNumber,
+        };
+      });
+
+      const excelBuffer = expensesToExcel(expensesWithNames);
+      return new NextResponse(excelBuffer as any, {
         headers: {
-          'Content-Type': 'text/csv',
-          'Content-Disposition': `attachment; filename="expenses-${Date.now()}.csv"`,
+          'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'Content-Disposition': `attachment; filename="expenses-${Date.now()}.xlsx"`,
         },
       });
     }
 
     return new NextResponse('', {
       headers: {
-        'Content-Type': 'text/csv',
-        'Content-Disposition': `attachment; filename="expenses-${Date.now()}.csv"`,
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Disposition': `attachment; filename="expenses-${Date.now()}.xlsx"`,
       },
     });
   } catch (error) {

@@ -24,6 +24,10 @@ export async function POST(req: NextRequest) {
 
     const user = await authenticateUser(identifier, password);
     if (!user) {
+      console.error('[LOGIN] Authentication failed:', {
+        identifier,
+        hasSupabaseAdmin: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      });
       return NextResponse.json(
         { error: 'Invalid email/phone or password' },
         { status: 401 }
