@@ -4,8 +4,6 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "start": "node scripts/auto-fix-and-run.js",
-    "dev:auto": "node scripts/start-dev.js",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -45,6 +43,7 @@
     "eslint-config-next": "^14.0.4",
     "postcss": "^8.4.32",
     "tailwindcss": "^3.4.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "vercel": "^49.1.2"
   }
 }

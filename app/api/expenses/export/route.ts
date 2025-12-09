@@ -72,7 +72,7 @@ async function handler(req: NextRequest & { user?: any }) {
     }
 
     if (data && data.length > 0) {
-      const driverIds = [...new Set(data.map((e: any) => e.driver_id))];
+      const driverIds = Array.from(new Set(data.map((e: any) => e.driver_id)));
       const { data: drivers } = await supabaseAdmin
         .from('profiles')
         .select('id, name')
