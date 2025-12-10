@@ -170,7 +170,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleExportExcel = async () => {
+  const handleExportCSV = async () => {
     try {
       const headers = getAuthHeaders();
       if (!headers) return;
@@ -188,14 +188,14 @@ export default function AdminDashboard() {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `expenses-${Date.now()}.xlsx`;
+        a.download = `expenses-${Date.now()}.csv`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
       }
     } catch (error) {
-      console.error('Failed to export Excel:', error);
+      console.error('Failed to export CSV:', error);
     }
   };
 
@@ -271,7 +271,7 @@ export default function AdminDashboard() {
 
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-            <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200 mt-12">
+            <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-blue-100 text-sm font-medium mb-1">Total Revenue</p>
@@ -285,7 +285,7 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200 mt-12">
+            <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-red-100 text-sm font-medium mb-1">Total Expenses</p>
@@ -299,49 +299,19 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Third Column: Small Filter + Net Profit Card */}
-            <div className="flex flex-col gap-2">
-              {/* Small Date Filter - aligned to right */}
-              <div className="flex justify-end">
-                <div className="p-2 w-fit">
-                  <div className="grid grid-cols-2 gap-1.5">
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-0.5">From</label>
-                      <input
-                        type="date"
-                        value={filters.start_date || ''}
-                        onChange={(e) => handleFilterChange('start_date', e.target.value)}
-                        className="w-full rounded-md border border-gray-300 px-2 py-1 text-gray-900 bg-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-0.5">To</label>
-                      <input
-                        type="date"
-                        value={filters.end_date || ''}
-                        onChange={(e) => handleFilterChange('end_date', e.target.value)}
-                        className="w-full rounded-md border border-gray-300 px-2 py-1 text-gray-900 bg-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                  </div>
+            <div className={`bg-gradient-to-br ${stats.netProfit >= 0 ? 'from-green-500 to-green-600' : 'from-orange-500 to-orange-600'} rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200`}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className={`${stats.netProfit >= 0 ? 'text-green-100' : 'text-orange-100'} text-sm font-medium mb-1`}>Net Profit</p>
+                  <p className="text-3xl font-bold">{formatCurrency(stats.netProfit)}</p>
                 </div>
-              </div>
-
-              {/* Net Profit Card - same size as other cards */}
-              <div className={`bg-gradient-to-br ${stats.netProfit >= 0 ? 'from-green-500 to-green-600' : 'from-orange-500 to-orange-600'} rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200 h-full`}>
-                <div className="flex items-center justify-between h-full">
-                  <div>
-                    <p className={`${stats.netProfit >= 0 ? 'text-green-100' : 'text-orange-100'} text-sm font-medium mb-1`}>Net Profit</p>
-                    <p className="text-3xl font-bold">{formatCurrency(stats.netProfit)}</p>
-                  </div>
-                  <div className="bg-white/20 rounded-lg p-3">
-                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                    </svg>
-                  </div>
+                <div className="bg-white/20 rounded-lg p-3">
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
                 </div>
-              </div>
-            </div>
+                  </div>
+                  </div>
 
             <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl transition-shadow duration-200">
               <div className="flex items-center justify-between">
@@ -371,6 +341,21 @@ export default function AdminDashboard() {
                 </div>
               </div>
                   </div>
+
+            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl transition-shadow duration-200">
+              <div className="flex items-center justify-between">
+                  <div>
+                  <p className="text-gray-600 text-sm font-medium mb-1">Total Expenses</p>
+                  <p className="text-3xl font-bold text-gray-900">{pagination.total}</p>
+                  <p className="text-xs text-gray-500 mt-1">Records found</p>
+                  </div>
+                <div className="bg-indigo-100 rounded-lg p-3">
+                  <svg className="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                  </div>
+              </div>
+            </div>
           </div>
 
           {/* Analytics Section */}
@@ -461,15 +446,15 @@ export default function AdminDashboard() {
               </div>
 
               <div className="flex items-end">
-              <button
+                <button
                   onClick={handleClearFilters}
                   className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200 text-sm font-medium flex items-center justify-center gap-2 border border-gray-300"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
-                Clear Filters
-              </button>
+                  Clear Filters
+                </button>
               </div>
             </div>
           </div>
@@ -482,13 +467,13 @@ export default function AdminDashboard() {
                 <p className="text-sm text-gray-600 mt-1">{pagination.total} total records</p>
               </div>
               <button
-                onClick={handleExportExcel}
+                onClick={handleExportCSV}
                 className="px-5 py-2.5 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-200 text-sm font-medium shadow-md hover:shadow-lg flex items-center gap-2"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                Export Excel
+                Export CSV
               </button>
             </div>
             <div className="p-6">

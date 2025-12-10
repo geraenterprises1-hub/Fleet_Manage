@@ -60,7 +60,6 @@ export async function authenticateUser(
   const { data, error } = await query.maybeSingle();
 
   if (error || !data) {
-    console.error('[AUTH] Query error:', { error, isEmail, identifier: emailOrPhone });
     // If phone_number column doesn't exist, fallback to email
     if (!isEmail && (error?.message?.includes('phone_number') || error?.code === '42703')) {
       console.warn('phone_number column missing, trying email fallback');
@@ -71,26 +70,18 @@ export async function authenticateUser(
       
       const fallbackResult = await fallbackQuery.maybeSingle();
       if (fallbackResult.error || !fallbackResult.data) {
-        console.error('[AUTH] Fallback query failed:', fallbackResult.error);
         return null;
       }
       const fallbackUser = fallbackResult.data as any;
       const isValid = await comparePassword(password, fallbackUser.password_hash);
-      if (!isValid) {
-        console.error('[AUTH] Password mismatch for fallback user');
-        return null;
-      }
+      if (!isValid) return null;
       return { ...fallbackUser, phone_number: undefined, vehicle_number: undefined } as Profile;
     }
-    console.error('[AUTH] User not found:', { error, identifier: emailOrPhone });
     return null;
   }
 
   const isValid = await comparePassword(password, data.password_hash);
-  if (!isValid) {
-    console.error('[AUTH] Password mismatch for user:', data.email || data.phone_number);
-    return null;
-  }
+  if (!isValid) return null;
 
   const userData = data as any;
   return userData as Profile;

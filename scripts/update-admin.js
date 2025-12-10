@@ -73,10 +73,8 @@ async function updateAdmin() {
     console.log(`   Name: ${admin.name}\n`);
 
     // Ask what to update
-    const updateEmailAnswer = await question('Do you want to update email? (y/n): ');
-    const updateEmail = updateEmailAnswer.toLowerCase() === 'y';
-    const updatePasswordAnswer = await question('Do you want to update password? (y/n): ');
-    const updatePassword = updatePasswordAnswer.toLowerCase() === 'y';
+    const updateEmail = await question('Do you want to update email? (y/n): ').toLowerCase() === 'y';
+    const updatePassword = await question('Do you want to update password? (y/n): ').toLowerCase() === 'y';
 
     if (!updateEmail && !updatePassword) {
       console.log('\n⚠️  No changes requested. Exiting.');
