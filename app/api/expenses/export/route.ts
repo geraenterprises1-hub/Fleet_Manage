@@ -1,8 +1,8 @@
-// GET /api/expenses/export - Export expenses to CSV
+// GET /api/expenses/export - Export expenses to Excel
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/middleware';
 import { supabaseAdmin } from '@/lib/db';
-import { expensesToCSV } from '@/lib/csv';
+import { expensesToExcel } from '@/lib/excel';
 
 async function handler(req: NextRequest & { user?: any }) {
   try {
@@ -35,8 +35,8 @@ async function handler(req: NextRequest & { user?: any }) {
       } else {
         return new NextResponse('', {
           headers: {
-            'Content-Type': 'text/csv',
-            'Content-Disposition': `attachment; filename="expenses-${Date.now()}.csv"`,
+            'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition': `attachment; filename="expenses-${Date.now()}.xlsx"`,
           },
         });
       }
@@ -84,19 +84,19 @@ async function handler(req: NextRequest & { user?: any }) {
         driver_name: driverMap.get(expense.driver_id) || null,
       }));
 
-      const csvContent = expensesToCSV(expensesWithNames);
-      return new NextResponse(csvContent, {
+      const excelBuffer = expensesToExcel(expensesWithNames);
+      return new NextResponse(excelBuffer, {
         headers: {
-          'Content-Type': 'text/csv',
-          'Content-Disposition': `attachment; filename="expenses-${Date.now()}.csv"`,
+          'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'Content-Disposition': `attachment; filename="expenses-${Date.now()}.xlsx"`,
         },
       });
     }
 
     return new NextResponse('', {
       headers: {
-        'Content-Type': 'text/csv',
-        'Content-Disposition': `attachment; filename="expenses-${Date.now()}.csv"`,
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Disposition': `attachment; filename="expenses-${Date.now()}.xlsx"`,
       },
     });
   } catch (error) {
