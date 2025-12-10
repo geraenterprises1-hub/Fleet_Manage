@@ -24,7 +24,7 @@ export async function uploadReceipt(file: File): Promise<string | null> {
       console.error('[STORAGE] Upload error:', {
         message: error.message,
         statusCode: 'statusCode' in error ? error.statusCode : undefined,
-        error: error.error,
+        error: 'error' in error ? error.error : undefined,
       });
       return null;
     }
