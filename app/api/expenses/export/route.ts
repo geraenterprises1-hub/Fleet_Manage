@@ -85,7 +85,7 @@ async function handler(req: NextRequest & { user?: any }) {
       }));
 
       const excelBuffer = expensesToExcel(expensesWithNames);
-      return new NextResponse(excelBuffer, {
+      return new NextResponse(new Uint8Array(excelBuffer), {
         headers: {
           'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           'Content-Disposition': `attachment; filename="expenses-${Date.now()}.xlsx"`,
