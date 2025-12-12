@@ -184,17 +184,52 @@ async function putHandler(
       );
     }
 
+    // List of columns that might not exist in older database schemas
+    // Remove them from updateData if they cause errors
+    const optionalColumns = ['purpose', 'driver_name', 'vehicle_number'];
+    
+    // Try update with all fields first
+    let updateAttempt = cleanedUpdateData;
+    let retryWithoutOptional = false;
+
     // Update expense
-    const { data: updatedExpense, error: updateError } = await supabaseAdmin
+    let { data: updatedExpense, error: updateError } = await supabaseAdmin
       .from('expenses')
-      .update(cleanedUpdateData)
+      .update(updateAttempt)
       .eq('id', expenseId)
       .select()
       .single();
 
+    // If column error, retry without optional columns
+    if (updateError && (updateError.code === '42703' || updateError.message?.includes('column') || updateError.message?.includes('does not exist'))) {
+      console.warn('[EXPENSES PUT] Column error detected, retrying without optional columns');
+      retryWithoutOptional = true;
+      
+      // Remove optional columns from update data
+      const safeUpdateData: any = {};
+      for (const [key, value] of Object.entries(cleanedUpdateData)) {
+        if (!optionalColumns.includes(key)) {
+          safeUpdateData[key] = value;
+        }
+      }
+      
+      if (Object.keys(safeUpdateData).length > 0) {
+        updateAttempt = safeUpdateData;
+        const retryResult = await supabaseAdmin
+          .from('expenses')
+          .update(updateAttempt)
+          .eq('id', expenseId)
+          .select()
+          .single();
+        
+        updatedExpense = retryResult.data;
+        updateError = retryResult.error;
+      }
+    }
+
     if (updateError) {
       console.error('[EXPENSES PUT] Update error:', updateError);
-      console.error('[EXPENSES PUT] Update data:', cleanedUpdateData);
+      console.error('[EXPENSES PUT] Update data:', updateAttempt);
       console.error('[EXPENSES PUT] Expense ID:', expenseId);
       console.error('[EXPENSES PUT] Error code:', updateError.code);
       console.error('[EXPENSES PUT] Error details:', updateError.details);
@@ -205,8 +240,9 @@ async function putHandler(
         return NextResponse.json(
           { 
             error: 'Database schema mismatch', 
-            details: 'One or more columns do not exist in the database. Please check database migrations.',
-            code: updateError.code
+            details: 'One or more columns do not exist in the database. Please run the migration: database/add-purpose-column.sql',
+            code: updateError.code,
+            hint: 'Run the SQL migration in Supabase SQL Editor to add missing columns'
           },
           { status: 500 }
         );
