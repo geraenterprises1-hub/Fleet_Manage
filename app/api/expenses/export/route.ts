@@ -81,7 +81,9 @@ async function handler(req: NextRequest & { user?: any }) {
       const driverMap = new Map((drivers || []).map((d: any) => [d.id, d.name]));
       const expensesWithNames = (data || []).map((expense: any) => ({
         ...expense,
-        driver_name: driverMap.get(expense.driver_id) || null,
+        driver_name: expense.driver_id 
+          ? (driverMap.get(expense.driver_id) || expense.driver_name || null)
+          : (expense.driver_name || 'Admin'),
       }));
 
       const excelBuffer = expensesToExcel(expensesWithNames);

@@ -266,7 +266,7 @@ export default function ExpenseTable({ expenses, onExpenseClick, onExpenseUpdate
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
                       </div>
-                      <span className="text-sm font-medium text-gray-900">{expense.driver_name || 'Unknown'}</span>
+                      <span className="text-sm font-medium text-gray-900">{expense.driver_name || (expense.driver_id === null ? 'Admin' : 'Unknown')}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -400,7 +400,7 @@ export default function ExpenseTable({ expenses, onExpenseClick, onExpenseUpdate
                     </div>
                     <label className="text-xs font-semibold text-purple-700 uppercase">Driver</label>
                   </div>
-                  <p className="text-lg font-bold text-gray-900">{selectedExpense.driver_name || 'Unknown'}</p>
+                  <p className="text-lg font-bold text-gray-900">{selectedExpense.driver_name || (selectedExpense.driver_id === null ? 'Admin' : 'Unknown')}</p>
                 </div>
 
                 <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200">

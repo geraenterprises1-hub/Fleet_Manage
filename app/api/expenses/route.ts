@@ -197,6 +197,9 @@ async function getHandler(req: NextRequest & { user?: any }) {
           } else {
             displayName = 'Deleted Driver';
           }
+        } else if (!driverName && !expense.driver_id) {
+          // Admin-created expense (no driver_id)
+          displayName = 'Admin';
         } else if (!driverName) {
           displayName = 'Unknown';
         }
