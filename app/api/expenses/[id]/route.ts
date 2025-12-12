@@ -89,11 +89,11 @@ async function putHandler(
     }
 
     if (note !== null) {
-      updateData.note = note || null;
+      updateData.note = note && note.trim() ? note.trim() : null;
     }
 
     if (purpose !== null) {
-      updateData.purpose = purpose || null;
+      updateData.purpose = purpose && purpose.trim() ? purpose.trim() : null;
     }
 
     if (total_revenueStr !== null && total_revenueStr.trim()) {
@@ -118,32 +118,47 @@ async function putHandler(
     }
 
     // Handle receipt uploads
-    const receipts = formData.getAll('receipts') as File[];
-    if (receipts.length > 0 && receipts[0].size > 0) {
-      const receiptUrls = await uploadMultipleReceipts(receipts.filter(f => f.size > 0));
-      if (receiptUrls.length > 0) {
-        updateData.receipt_url = JSON.stringify(receiptUrls);
+    try {
+      const receipts = formData.getAll('receipts') as File[];
+      if (receipts.length > 0 && receipts[0].size > 0) {
+        const receiptUrls = await uploadMultipleReceipts(receipts.filter(f => f.size > 0));
+        if (receiptUrls.length > 0) {
+          updateData.receipt_url = JSON.stringify(receiptUrls);
+        }
       }
+    } catch (error: any) {
+      console.error('[EXPENSES PUT] Error uploading receipts:', error);
+      // Don't fail the entire update if receipt upload fails
     }
 
     // Handle Uber proof
-    const uber_proof = formData.get('uber_proof') as File | null;
-    if (uber_proof && uber_proof.size > 0) {
-      const { uploadReceipt } = await import('@/lib/storage');
-      const uber_proof_url = await uploadReceipt(uber_proof);
-      if (uber_proof_url) {
-        updateData.uber_proof_url = uber_proof_url;
+    try {
+      const uber_proof = formData.get('uber_proof') as File | null;
+      if (uber_proof && uber_proof.size > 0) {
+        const { uploadReceipt } = await import('@/lib/storage');
+        const uber_proof_url = await uploadReceipt(uber_proof);
+        if (uber_proof_url) {
+          updateData.uber_proof_url = uber_proof_url;
+        }
       }
+    } catch (error: any) {
+      console.error('[EXPENSES PUT] Error uploading Uber proof:', error);
+      // Don't fail the entire update if proof upload fails
     }
 
     // Handle Rapido proof
-    const rapido_proof = formData.get('rapido_proof') as File | null;
-    if (rapido_proof && rapido_proof.size > 0) {
-      const { uploadReceipt } = await import('@/lib/storage');
-      const rapido_proof_url = await uploadReceipt(rapido_proof);
-      if (rapido_proof_url) {
-        updateData.rapido_proof_url = rapido_proof_url;
+    try {
+      const rapido_proof = formData.get('rapido_proof') as File | null;
+      if (rapido_proof && rapido_proof.size > 0) {
+        const { uploadReceipt } = await import('@/lib/storage');
+        const rapido_proof_url = await uploadReceipt(rapido_proof);
+        if (rapido_proof_url) {
+          updateData.rapido_proof_url = rapido_proof_url;
+        }
       }
+    } catch (error: any) {
+      console.error('[EXPENSES PUT] Error uploading Rapido proof:', error);
+      // Don't fail the entire update if proof upload fails
     }
 
     // Check if there's anything to update
@@ -164,8 +179,14 @@ async function putHandler(
 
     if (updateError) {
       console.error('[EXPENSES PUT] Update error:', updateError);
+      console.error('[EXPENSES PUT] Update data:', updateData);
+      console.error('[EXPENSES PUT] Expense ID:', expenseId);
       return NextResponse.json(
-        { error: 'Failed to update expense', details: updateError.message },
+        { 
+          error: 'Failed to update expense', 
+          details: updateError.message || 'Database error occurred',
+          code: updateError.code
+        },
         { status: 500 }
       );
     }
