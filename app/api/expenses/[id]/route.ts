@@ -169,18 +169,49 @@ async function putHandler(
       );
     }
 
+    // Clean up updateData - remove undefined values and ensure proper types
+    const cleanedUpdateData: any = {};
+    for (const [key, value] of Object.entries(updateData)) {
+      if (value !== undefined && value !== '') {
+        cleanedUpdateData[key] = value;
+      }
+    }
+
+    if (Object.keys(cleanedUpdateData).length === 0) {
+      return NextResponse.json(
+        { error: 'No valid fields to update' },
+        { status: 400 }
+      );
+    }
+
     // Update expense
     const { data: updatedExpense, error: updateError } = await supabaseAdmin
       .from('expenses')
-      .update(updateData)
+      .update(cleanedUpdateData)
       .eq('id', expenseId)
       .select()
       .single();
 
     if (updateError) {
       console.error('[EXPENSES PUT] Update error:', updateError);
-      console.error('[EXPENSES PUT] Update data:', updateData);
+      console.error('[EXPENSES PUT] Update data:', cleanedUpdateData);
       console.error('[EXPENSES PUT] Expense ID:', expenseId);
+      console.error('[EXPENSES PUT] Error code:', updateError.code);
+      console.error('[EXPENSES PUT] Error details:', updateError.details);
+      console.error('[EXPENSES PUT] Error hint:', updateError.hint);
+      
+      // Handle specific database errors
+      if (updateError.code === '42703' || updateError.message?.includes('column') || updateError.message?.includes('does not exist')) {
+        return NextResponse.json(
+          { 
+            error: 'Database schema mismatch', 
+            details: 'One or more columns do not exist in the database. Please check database migrations.',
+            code: updateError.code
+          },
+          { status: 500 }
+        );
+      }
+      
       return NextResponse.json(
         { 
           error: 'Failed to update expense', 
