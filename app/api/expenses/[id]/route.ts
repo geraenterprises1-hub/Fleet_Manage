@@ -42,7 +42,8 @@ async function putHandler(
     }
 
     // Drivers can only update their own expenses, admins can update any
-    if (role === 'driver' && existingExpense.driver_id !== userId) {
+    // Handle null driver_id (admin expenses)
+    if (role === 'driver' && existingExpense.driver_id && existingExpense.driver_id !== userId) {
       return NextResponse.json(
         { error: 'You do not have permission to update this expense' },
         { status: 403 }
@@ -80,10 +81,10 @@ async function putHandler(
       updateData.category = category;
     }
 
-    if (amountStr !== null) {
+    if (amountStr !== null && amountStr.trim()) {
       const amount = parseFloat(amountStr);
       if (!isNaN(amount)) {
-        updateData.amount = amount;
+        updateData.amount = Math.round(amount);
       }
     }
 
@@ -95,24 +96,24 @@ async function putHandler(
       updateData.purpose = purpose || null;
     }
 
-    if (total_revenueStr !== null) {
+    if (total_revenueStr !== null && total_revenueStr.trim()) {
       const total_revenue = parseFloat(total_revenueStr);
       if (!isNaN(total_revenue)) {
-        updateData.total_revenue = total_revenue;
+        updateData.total_revenue = Math.round(total_revenue);
       }
     }
 
-    if (uber_revenueStr !== null) {
+    if (uber_revenueStr !== null && uber_revenueStr.trim()) {
       const uber_revenue = parseFloat(uber_revenueStr);
       if (!isNaN(uber_revenue)) {
-        updateData.uber_revenue = uber_revenue;
+        updateData.uber_revenue = Math.round(uber_revenue);
       }
     }
 
-    if (rapido_revenueStr !== null) {
+    if (rapido_revenueStr !== null && rapido_revenueStr.trim()) {
       const rapido_revenue = parseFloat(rapido_revenueStr);
       if (!isNaN(rapido_revenue)) {
-        updateData.rapido_revenue = rapido_revenue;
+        updateData.rapido_revenue = Math.round(rapido_revenue);
       }
     }
 
@@ -143,6 +144,14 @@ async function putHandler(
       if (rapido_proof_url) {
         updateData.rapido_proof_url = rapido_proof_url;
       }
+    }
+
+    // Check if there's anything to update
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json(
+        { error: 'No fields to update' },
+        { status: 400 }
+      );
     }
 
     // Update expense
@@ -208,7 +217,8 @@ async function deleteHandler(
     }
 
     // Drivers can only delete their own expenses, admins can delete any
-    if (role === 'driver' && existingExpense.driver_id !== userId) {
+    // Handle null driver_id (admin expenses)
+    if (role === 'driver' && existingExpense.driver_id && existingExpense.driver_id !== userId) {
       return NextResponse.json(
         { error: 'You do not have permission to delete this expense' },
         { status: 403 }

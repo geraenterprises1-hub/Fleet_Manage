@@ -251,9 +251,9 @@ async function postHandler(req: NextRequest & { user?: any }) {
     const formData = await req.formData();
 
     let date = formData.get('date') as string;
-    // Category is optional for admin, defaults to 'other' if not provided
+    // Category defaults to 'other' if not provided (removed from UI)
     let category = formData.get('category') as string;
-    if (!category && role === 'admin') {
+    if (!category || !category.trim()) {
       category = 'other';
     }
     
@@ -273,38 +273,39 @@ async function postHandler(req: NextRequest & { user?: any }) {
         }
       }
     }
-    const amountStr = formData.get('amount') as string;
+    const amountStr = formData.get('amount') as string | null;
     const note = formData.get('note') as string | null;
     const purpose = formData.get('purpose') as string | null;
-    const total_revenueStr = formData.get('total_revenue') as string;
-    const uber_revenueStr = formData.get('uber_revenue') as string;
-    const rapido_revenueStr = formData.get('rapido_revenue') as string;
+    const total_revenueStr = formData.get('total_revenue') as string | null;
+    const uber_revenueStr = formData.get('uber_revenue') as string | null;
+    const rapido_revenueStr = formData.get('rapido_revenue') as string | null;
     
-    const amount = amountStr ? parseFloat(amountStr) : 0;
-    const total_revenue = total_revenueStr ? parseFloat(total_revenueStr) : 0;
-    const uber_revenue = uber_revenueStr ? parseFloat(uber_revenueStr) : 0;
-    const rapido_revenue = rapido_revenueStr ? parseFloat(rapido_revenueStr) : 0;
+    // Parse numbers, handling empty strings and null values
+    const amount = amountStr && amountStr.trim() ? parseFloat(amountStr) : 0;
+    const total_revenue = total_revenueStr && total_revenueStr.trim() ? parseFloat(total_revenueStr) : 0;
+    const uber_revenue = uber_revenueStr && uber_revenueStr.trim() ? parseFloat(uber_revenueStr) : 0;
+    const rapido_revenue = rapido_revenueStr && rapido_revenueStr.trim() ? parseFloat(rapido_revenueStr) : 0;
     
-    // Validate numbers
-    if (isNaN(amount)) {
+    // Validate numbers (check for NaN only if value was provided)
+    if (amountStr && amountStr.trim() && isNaN(amount)) {
       return NextResponse.json(
         { error: 'Invalid amount value' },
         { status: 400 }
       );
     }
-    if (isNaN(total_revenue)) {
+    if (total_revenueStr && total_revenueStr.trim() && isNaN(total_revenue)) {
       return NextResponse.json(
         { error: 'Invalid total revenue value' },
         { status: 400 }
       );
     }
-    if (isNaN(uber_revenue)) {
+    if (uber_revenueStr && uber_revenueStr.trim() && isNaN(uber_revenue)) {
       return NextResponse.json(
         { error: 'Invalid Uber revenue value' },
         { status: 400 }
       );
     }
-    if (isNaN(rapido_revenue)) {
+    if (rapido_revenueStr && rapido_revenueStr.trim() && isNaN(rapido_revenue)) {
       return NextResponse.json(
         { error: 'Invalid Rapido revenue value' },
         { status: 400 }
@@ -420,13 +421,13 @@ async function postHandler(req: NextRequest & { user?: any }) {
       driver_id: driverId,
       date,
       category: category as any,
-      amount: amountValue,
+      amount: Math.round(amountValue),
       note: note || null,
       purpose: purpose || null,
       receipt_url: receiptUrls.length > 0 ? JSON.stringify(receiptUrls) : null,
-      total_revenue: totalRevenueValue,
-      uber_revenue: uberRevenueValue,
-      rapido_revenue: rapidoRevenueValue,
+      total_revenue: Math.round(totalRevenueValue),
+      uber_revenue: Math.round(uberRevenueValue),
+      rapido_revenue: Math.round(rapidoRevenueValue),
     };
     
     // Only add driver_name and vehicle_number if we have them (columns might not exist yet)
