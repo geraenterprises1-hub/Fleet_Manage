@@ -94,7 +94,7 @@ export default function ExpenseTable({ expenses, onExpenseClick, onExpenseUpdate
 
       const formDataToSend = new FormData();
       formDataToSend.append('date', formData.date);
-      formDataToSend.append('category', formData.category || 'other');
+      formDataToSend.append('category', 'other'); // Default category
       formDataToSend.append('amount', String(formData.amount || 0));
       if (formData.note) formDataToSend.append('note', formData.note);
       if (formData.purpose) formDataToSend.append('purpose', formData.purpose);
@@ -403,19 +403,6 @@ export default function ExpenseTable({ expenses, onExpenseClick, onExpenseUpdate
                   <p className="text-lg font-bold text-gray-900">{selectedExpense.driver_name || (selectedExpense.driver_id === null ? 'Admin' : 'Unknown')}</p>
                 </div>
 
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="bg-blue-500 rounded-lg p-1.5">
-                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                      </svg>
-                    </div>
-                    <label className="text-xs font-semibold text-blue-700 uppercase">Category</label>
-                  </div>
-                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border ${getCategoryColor(selectedExpense.category)}`}>
-                    {selectedExpense.category.charAt(0).toUpperCase() + selectedExpense.category.slice(1)}
-                  </span>
-                </div>
 
                 <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-4 border border-red-200">
                   <div className="flex items-center gap-2 mb-2">

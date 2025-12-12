@@ -317,13 +317,6 @@ async function postHandler(req: NextRequest & { user?: any }) {
         { status: 400 }
       );
     }
-    
-    if (!category && role === 'driver') {
-      return NextResponse.json(
-        { error: 'Category is required' },
-        { status: 400 }
-      );
-    }
 
     // For drivers, use their own ID. For admin, driver_id is optional (can be null for admin expenses)
     const driverId = role === 'driver' ? userId : (formData.get('driver_id') as string || null);

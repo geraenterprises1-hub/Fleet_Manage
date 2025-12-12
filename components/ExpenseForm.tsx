@@ -15,7 +15,7 @@ interface ExpenseFormProps {
 export default function ExpenseForm({ onSubmit, onCancel, initialData, loading, isAdmin = false, drivers = [] }: ExpenseFormProps) {
   const [formData, setFormData] = useState<ExpenseFormData>({
     date: initialData?.date || new Date().toISOString().split('T')[0],
-    category: initialData?.category || 'fuel',
+    category: initialData?.category || 'other',
     amount: initialData?.amount || 0,
     note: initialData?.note || '',
     purpose: initialData?.purpose || '',
