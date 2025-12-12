@@ -533,7 +533,7 @@ async function postHandler(req: NextRequest & { user?: any }) {
             );
           }
           
-          if (amountValue >= 5000) {
+          if (amountValue >= 5000 && driverId) {
             try {
               const driver = await supabaseAdmin.from('profiles').select('name').eq('id', driverId).maybeSingle();
               if (driver?.data) {
@@ -547,7 +547,7 @@ async function postHandler(req: NextRequest & { user?: any }) {
           return NextResponse.json({ data: finalExpense }, { status: 201 });
         }
         
-        if (amountValue >= 5000) {
+        if (amountValue >= 5000 && driverId) {
           try {
             const driver = await supabaseAdmin.from('profiles').select('name').eq('id', driverId).maybeSingle();
             if (driver?.data) {
@@ -572,10 +572,14 @@ async function postHandler(req: NextRequest & { user?: any }) {
       );
     }
 
-    if (amount >= 5000) {
-      const driver = await supabaseAdmin.from('profiles').select('name').eq('id', driverId).single();
-      if (driver.data) {
-        await notifyHighValueExpense((driver.data as any).name, amount, category, date);
+    if (amount >= 5000 && driverId) {
+      try {
+        const driver = await supabaseAdmin.from('profiles').select('name').eq('id', driverId).maybeSingle();
+        if (driver.data) {
+          await notifyHighValueExpense((driver.data as any).name, amount, category, date);
+        }
+      } catch (e) {
+        console.warn('[EXPENSES POST] Could not send high value notification:', e);
       }
     }
 
