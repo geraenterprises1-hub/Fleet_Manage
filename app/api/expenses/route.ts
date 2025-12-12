@@ -468,6 +468,18 @@ async function postHandler(req: NextRequest & { user?: any }) {
         hint: insertError.hint,
       });
       
+      // Handle NOT NULL constraint error for driver_id (23502)
+      if (insertError.code === '23502' && insertError.message?.includes('driver_id')) {
+        return NextResponse.json(
+          { 
+            error: 'Database migration required',
+            details: 'The driver_id column must allow NULL values for admin expenses.',
+            hint: 'Please run the migration: database/allow-null-driver-id.sql in Supabase SQL Editor'
+          },
+          { status: 500 }
+        );
+      }
+      
       // Handle missing column error (42703) - try without optional columns
       if (insertError.code === '42703' || insertError.message?.includes('column') || insertError.message?.includes('does not exist')) {
         console.log('[EXPENSES POST] Retrying without optional columns (driver_name, revenue columns)');
