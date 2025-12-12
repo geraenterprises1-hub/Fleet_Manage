@@ -9,14 +9,42 @@ import Pagination from '@/components/Pagination';
 import Header from '@/components/Header';
 import type { Expense, ExpenseFormData } from '@/types';
 
+// Helper function to get current month's start and end dates
+const getCurrentMonthDates = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  
+  // First day of current month
+  const startDate = new Date(year, month, 1);
+  // Last day of current month
+  const endDate = new Date(year, month + 1, 0);
+  
+  // Format as YYYY-MM-DD
+  const formatDate = (date: Date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+  
+  return {
+    start_date: formatDate(startDate),
+    end_date: formatDate(endDate),
+  };
+};
+
 export default function DriverDashboard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [showForm, setShowForm] = useState(false);
+  
+  // Initialize filters with current month dates
+  const currentMonthDates = getCurrentMonthDates();
   const [filters, setFilters] = useState({
-    start_date: '',
-    end_date: '',
+    start_date: currentMonthDates.start_date,
+    end_date: currentMonthDates.end_date,
     page: 1,
     limit: 20,
   });
@@ -36,6 +64,38 @@ export default function DriverDashboard() {
     }
     setLoading(false);
   }, [router]);
+
+  // Update filters to current month when month changes (check periodically)
+  useEffect(() => {
+    const checkAndUpdateMonth = () => {
+      const currentDates = getCurrentMonthDates();
+      
+      // Check if we're viewing a previous month
+      if (filters.start_date && filters.end_date) {
+        const filterStartDate = new Date(filters.start_date);
+        const now = new Date();
+        const filterMonth = filterStartDate.getMonth();
+        const filterYear = filterStartDate.getFullYear();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+        
+        // If viewing a previous month and it's now a new month, auto-update to current month
+        if ((filterYear < currentYear) || (filterYear === currentYear && filterMonth < currentMonth)) {
+          setFilters(prev => ({
+            ...prev,
+            start_date: currentDates.start_date,
+            end_date: currentDates.end_date,
+            page: 1, // Reset to first page
+          }));
+        }
+      }
+    };
+
+    // Check every hour for month changes
+    const interval = setInterval(checkAndUpdateMonth, 3600000); // 1 hour
+
+    return () => clearInterval(interval);
+  }, [filters.start_date, filters.end_date]);
 
   useEffect(() => {
     if (!loading) {
@@ -170,7 +230,7 @@ export default function DriverDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-green-100 text-sm font-medium mb-1">Total Revenue</p>
-                  <p className="text-3xl font-bold">₹{totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                  <p className="text-3xl font-bold">₹{Math.round(totalRevenue).toLocaleString('en-IN')}</p>
                 </div>
                 <div className="bg-white/20 rounded-lg p-3">
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -184,7 +244,7 @@ export default function DriverDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-red-100 text-sm font-medium mb-1">Total Expenses</p>
-                  <p className="text-3xl font-bold">₹{totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                  <p className="text-3xl font-bold">₹{Math.round(totalAmount).toLocaleString('en-IN')}</p>
                 </div>
                 <div className="bg-white/20 rounded-lg p-3">
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -198,7 +258,7 @@ export default function DriverDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className={`${totalRevenue - totalAmount >= 0 ? 'text-blue-100' : 'text-orange-100'} text-sm font-medium mb-1`}>Net Profit</p>
-                  <p className="text-3xl font-bold">₹{(totalRevenue - totalAmount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                  <p className="text-3xl font-bold">₹{Math.round(totalRevenue - totalAmount).toLocaleString('en-IN')}</p>
                 </div>
                 <div className="bg-white/20 rounded-lg p-3">
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -257,13 +317,16 @@ export default function DriverDashboard() {
                   </div>
                   <div className="flex items-end">
                     <button
-                      onClick={() => setFilters({ start_date: '', end_date: '', page: 1, limit: 20 })}
+                      onClick={() => {
+                        const currentDates = getCurrentMonthDates();
+                        setFilters({ start_date: currentDates.start_date, end_date: currentDates.end_date, page: 1, limit: 20 });
+                      }}
                       className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200 text-sm font-medium flex items-center justify-center gap-2 border border-gray-300"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                       </svg>
-                      Clear Filters
+                      Reset to Current Month
                     </button>
                   </div>
                 </div>

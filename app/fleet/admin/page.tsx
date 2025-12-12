@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getToken, removeToken, getAuthHeaders } from '@/lib/client-auth';
 import ExpenseTable from '@/components/ExpenseTable';
+import ExpenseForm from '@/components/ExpenseForm';
 import Pagination from '@/components/Pagination';
 import AnalyticsCharts from '@/components/AnalyticsCharts';
 import Header from '@/components/Header';
-import type { Expense, ExpenseFilters, DriverStats, Vehicle } from '@/types';
+import type { Expense, ExpenseFilters, DriverStats, Vehicle, ExpenseFormData } from '@/types';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -39,6 +40,8 @@ export default function AdminDashboard() {
     limit: 20,
     totalPages: 0,
   });
+  const [showExpenseForm, setShowExpenseForm] = useState(false);
+  const [submittingExpense, setSubmittingExpense] = useState(false);
 
   useEffect(() => {
       const token = getToken();
@@ -244,6 +247,76 @@ export default function AdminDashboard() {
     router.replace('/fleet/admin/login');
   };
 
+  const handleSubmitExpense = async (formData: ExpenseFormData) => {
+    setSubmittingExpense(true);
+    try {
+      const headers = getAuthHeaders();
+      if (!headers) return;
+
+      const formDataToSend = new FormData();
+      formDataToSend.append('date', formData.date);
+      // Category defaults to 'other' for admin if not provided
+      formDataToSend.append('category', formData.category || 'other');
+      formDataToSend.append('amount', String(formData.amount || 0));
+      if (formData.note) formDataToSend.append('note', formData.note);
+      if (formData.purpose) formDataToSend.append('purpose', formData.purpose);
+      
+      // Always send revenue values (even if 0) to ensure validation works
+      const totalRevenue = formData.total_revenue || 0;
+      const uberRevenue = formData.uber_revenue || 0;
+      const rapidoRevenue = formData.rapido_revenue || 0;
+      
+      formDataToSend.append('total_revenue', String(totalRevenue));
+      formDataToSend.append('uber_revenue', String(uberRevenue));
+      formDataToSend.append('rapido_revenue', String(rapidoRevenue));
+      
+      // Add driver_id for admin
+      if (formData.driver_id) {
+        formDataToSend.append('driver_id', formData.driver_id);
+      }
+      
+      if (formData.receipts) {
+        formData.receipts.forEach((file) => {
+          formDataToSend.append('receipts', file);
+        });
+      }
+      
+      if (formData.uber_proof) {
+        formDataToSend.append('uber_proof', formData.uber_proof);
+      }
+      
+      if (formData.rapido_proof) {
+        formDataToSend.append('rapido_proof', formData.rapido_proof);
+      }
+
+      const response = await fetch('/api/expenses', {
+        method: 'POST',
+        headers: {
+          Authorization: headers.Authorization,
+        },
+        body: formDataToSend,
+      });
+
+      const responseData = await response.json();
+
+      if (response.ok) {
+        setShowExpenseForm(false);
+        loadExpenses();
+        loadStats(); // Refresh stats to include new expense
+      } else {
+        console.error('API Error:', responseData);
+        const errorMessage = responseData.error || `Failed to create expense (${response.status})`;
+        alert(errorMessage);
+      }
+    } catch (error: any) {
+      console.error('Failed to submit expense:', error);
+      const errorMessage = error?.message || 'Failed to submit expense. Please check your connection and try again.';
+      alert(errorMessage);
+    } finally {
+      setSubmittingExpense(false);
+    }
+  };
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
@@ -251,12 +324,12 @@ export default function AdminDashboard() {
   const assignedVehicles = vehicles.filter(v => v.status === 'assigned' && v.driver_id);
 
   const formatCurrency = (amount: number) => {
-    return `₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    return `₹${Math.round(amount).toLocaleString('en-IN')}`;
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <Header showNavigation={true} currentPage="expenses" userRole="admin" onLogout={handleLogout} />
+      <Header showNavigation={true} currentPage="expenses" userRole="admin" onLogout={handleLogout} onAddExpense={() => setShowExpenseForm(true)} />
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           {/* Dashboard Header */}
@@ -291,7 +364,7 @@ export default function AdminDashboard() {
                 />
               </div>
               {(filters.start_date || filters.end_date) && (
-                <button
+              <button
                   onClick={() => {
                     handleFilterChange('start_date', '');
                     handleFilterChange('end_date', '');
@@ -302,7 +375,7 @@ export default function AdminDashboard() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                   Clear
-                </button>
+              </button>
               )}
             </div>
           </div>
@@ -319,8 +392,8 @@ export default function AdminDashboard() {
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                </div>
-              </div>
+        </div>
+          </div>
             </div>
 
             <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200">
@@ -484,15 +557,15 @@ export default function AdminDashboard() {
               </div>
 
               <div className="flex items-end">
-                <button
+              <button
                   onClick={handleClearFilters}
                   className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200 text-sm font-medium flex items-center justify-center gap-2 border border-gray-300"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
-                  Clear Filters
-                </button>
+                Clear Filters
+              </button>
               </div>
             </div>
           </div>
@@ -519,7 +592,7 @@ export default function AdminDashboard() {
                 <p className="text-center text-gray-500 py-8">No expenses found</p>
             ) : (
               <>
-                  <ExpenseTable expenses={expenses} />
+                  <ExpenseTable expenses={expenses} isAdmin={true} onExpenseUpdate={() => { loadExpenses(); loadStats(); }} />
                 <Pagination
                     currentPage={pagination.page}
                     totalPages={pagination.totalPages}
@@ -531,6 +604,33 @@ export default function AdminDashboard() {
         </div>
         </div>
       </div>
+
+      {/* Expense Form Modal */}
+      {showExpenseForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center z-10">
+              <h2 className="text-2xl font-bold text-gray-900">Add New Expense</h2>
+              <button
+                onClick={() => setShowExpenseForm(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-6">
+              <ExpenseForm
+                onSubmit={handleSubmitExpense}
+                onCancel={() => setShowExpenseForm(false)}
+                loading={submittingExpense}
+                isAdmin={true}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

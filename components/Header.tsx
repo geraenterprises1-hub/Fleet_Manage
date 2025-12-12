@@ -9,9 +9,10 @@ interface HeaderProps {
   currentPage?: 'expenses' | 'drivers' | 'vehicles';
   userRole?: 'admin' | 'driver';
   onLogout?: () => void;
+  onAddExpense?: () => void; // For admin to add expenses
 }
 
-export default function Header({ showNavigation = false, currentPage, userRole, onLogout }: HeaderProps) {
+export default function Header({ showNavigation = false, currentPage, userRole, onLogout, onAddExpense }: HeaderProps) {
   const [showFallback, setShowFallback] = useState(false);
 
   return (
@@ -105,6 +106,17 @@ export default function Header({ showNavigation = false, currentPage, userRole, 
                 >
                   Vehicles
                 </Link>
+                {onAddExpense && (
+                  <button
+                    onClick={onAddExpense}
+                    className="px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-2 font-medium"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Add Expense
+                  </button>
+                )}
               </nav>
             )}
             {onLogout && (

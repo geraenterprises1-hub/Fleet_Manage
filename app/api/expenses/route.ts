@@ -248,7 +248,11 @@ async function postHandler(req: NextRequest & { user?: any }) {
     const formData = await req.formData();
 
     let date = formData.get('date') as string;
-    const category = formData.get('category') as string;
+    // Category is optional for admin, defaults to 'other' if not provided
+    let category = formData.get('category') as string;
+    if (!category && role === 'admin') {
+      category = 'other';
+    }
     
     // Normalize date format (handle DD/MM/YYYY or MM/DD/YYYY to YYYY-MM-DD)
     if (date) {
@@ -268,6 +272,7 @@ async function postHandler(req: NextRequest & { user?: any }) {
     }
     const amountStr = formData.get('amount') as string;
     const note = formData.get('note') as string | null;
+    const purpose = formData.get('purpose') as string | null;
     const total_revenueStr = formData.get('total_revenue') as string;
     const uber_revenueStr = formData.get('uber_revenue') as string;
     const rapido_revenueStr = formData.get('rapido_revenue') as string;
@@ -303,15 +308,23 @@ async function postHandler(req: NextRequest & { user?: any }) {
       );
     }
 
-    if (!date || !category) {
+    if (!date) {
       return NextResponse.json(
-        { error: 'Date and category are required' },
+        { error: 'Date is required' },
+        { status: 400 }
+      );
+    }
+    
+    if (!category && role === 'driver') {
+      return NextResponse.json(
+        { error: 'Category is required' },
         { status: 400 }
       );
     }
 
-    const driverId = role === 'driver' ? userId : (formData.get('driver_id') as string);
-    if (!driverId) {
+    // For drivers, use their own ID. For admin, driver_id is optional (can be null for admin expenses)
+    const driverId = role === 'driver' ? userId : (formData.get('driver_id') as string || null);
+    if (role === 'driver' && !driverId) {
       return NextResponse.json(
         { error: 'Driver ID is required' },
         { status: 400 }
@@ -338,15 +351,18 @@ async function postHandler(req: NextRequest & { user?: any }) {
       }
     }
 
-    // Validate that at least one revenue/expense field is greater than 0
+    // Validate that at least one of revenue or expense must be greater than 0
     const amountValue = isNaN(amount) ? 0 : amount;
     const totalRevenueValue = isNaN(total_revenue) ? 0 : total_revenue;
     const uberRevenueValue = isNaN(uber_revenue) ? 0 : uber_revenue;
     const rapidoRevenueValue = isNaN(rapido_revenue) ? 0 : rapido_revenue;
 
-    if (amountValue === 0 && totalRevenueValue === 0 && uberRevenueValue === 0 && rapidoRevenueValue === 0) {
+    const hasRevenue = totalRevenueValue > 0 || uberRevenueValue > 0 || rapidoRevenueValue > 0;
+    const hasExpense = amountValue > 0;
+
+    if (!hasRevenue && !hasExpense) {
       return NextResponse.json(
-        { error: 'At least one revenue or expense field must be greater than 0' },
+        { error: 'At least one of Revenue or Expense must be greater than 0' },
         { status: 400 }
       );
     }
@@ -422,6 +438,7 @@ async function postHandler(req: NextRequest & { user?: any }) {
       category: category as any,
       amount: amountValue,
       note: note || null,
+      purpose: purpose || null,
       receipt_url: receiptUrls.length > 0 ? JSON.stringify(receiptUrls) : null,
       total_revenue: totalRevenueValue,
       uber_revenue: uberRevenueValue,

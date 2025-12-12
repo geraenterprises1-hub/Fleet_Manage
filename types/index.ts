@@ -39,6 +39,7 @@ export interface ExpenseFormData {
   category: ExpenseCategory;
   amount: number;
   note?: string;
+  purpose?: string; // Purpose/description of the expense
   receipt?: File; // Deprecated - use receipts instead
   receipts?: File[]; // Multiple receipts
   total_revenue?: number;
@@ -46,6 +47,7 @@ export interface ExpenseFormData {
   rapido_revenue?: number;
   uber_proof?: File;
   rapido_proof?: File;
+  driver_id?: string; // For admin to select driver
 }
 
 export interface DriverStats {
