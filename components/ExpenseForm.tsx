@@ -33,7 +33,7 @@ export default function ExpenseForm({ onSubmit, onCancel, initialData, loading, 
   useEffect(() => {
     // Only auto-calculate total revenue for drivers (not admin)
     if (!isAdmin) {
-      const total = (formData.uber_revenue || 0) + (formData.rapido_revenue || 0);
+      const total = Math.round((formData.uber_revenue || 0) + (formData.rapido_revenue || 0));
       setFormData((prev) => ({ ...prev, total_revenue: total }));
     }
   }, [formData.uber_revenue, formData.rapido_revenue, isAdmin]);
@@ -176,12 +176,12 @@ export default function ExpenseForm({ onSubmit, onCancel, initialData, loading, 
                 type="number"
                 id="total_revenue"
                 min="0"
-                step="0.01"
+                step="1"
                 required={isAdmin}
                 value={formData.total_revenue || ''}
-                onChange={(e) => setFormData({ ...formData, total_revenue: parseFloat(e.target.value) || 0 })}
+                onChange={(e) => setFormData({ ...formData, total_revenue: Math.round(parseFloat(e.target.value) || 0) })}
                 className="w-full pl-10 rounded-lg border-2 border-green-300 px-3 py-3 text-gray-900 bg-white font-semibold text-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="0.00"
+                placeholder="0"
               />
             </div>
           </div>
@@ -203,11 +203,11 @@ export default function ExpenseForm({ onSubmit, onCancel, initialData, loading, 
                 type="number"
                 id="uber_revenue"
                 min="0"
-                step="0.01"
+                step="1"
                 value={formData.uber_revenue || ''}
-                onChange={(e) => setFormData({ ...formData, uber_revenue: parseFloat(e.target.value) || 0 })}
+                onChange={(e) => setFormData({ ...formData, uber_revenue: Math.round(parseFloat(e.target.value) || 0) })}
                 className="w-full pl-8 rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
-                placeholder="0.00"
+                placeholder="0"
               />
             </div>
           </div>
@@ -254,11 +254,11 @@ export default function ExpenseForm({ onSubmit, onCancel, initialData, loading, 
                 type="number"
                 id="rapido_revenue"
                 min="0"
-                step="0.01"
+                step="1"
                 value={formData.rapido_revenue || ''}
-                onChange={(e) => setFormData({ ...formData, rapido_revenue: parseFloat(e.target.value) || 0 })}
+                onChange={(e) => setFormData({ ...formData, rapido_revenue: Math.round(parseFloat(e.target.value) || 0) })}
                 className="w-full pl-8 rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
-                placeholder="0.00"
+                placeholder="0"
               />
             </div>
           </div>
@@ -305,7 +305,7 @@ export default function ExpenseForm({ onSubmit, onCancel, initialData, loading, 
                 type="number"
                 id="total_revenue"
                 min="0"
-                step="0.01"
+                step="1"
                 value={formData.total_revenue || ''}
                 readOnly
                 className="w-full pl-10 rounded-lg border-2 border-green-300 px-3 py-3 text-gray-900 bg-white font-semibold text-lg cursor-not-allowed"
@@ -343,16 +343,16 @@ export default function ExpenseForm({ onSubmit, onCancel, initialData, loading, 
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <span className="text-red-700 font-bold text-lg">₹</span>
             </div>
-            <input
-              type="number"
-              id="amount"
-              min="0"
-              step="0.01"
-              value={formData.amount || ''}
-              onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
-              className="w-full pl-10 rounded-lg border-2 border-red-300 px-3 py-3 text-gray-900 bg-white font-semibold text-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-              placeholder="0.00"
-            />
+              <input
+                type="number"
+                id="amount"
+                min="0"
+                step="1"
+                value={formData.amount || ''}
+                onChange={(e) => setFormData({ ...formData, amount: Math.round(parseFloat(e.target.value) || 0) })}
+                className="w-full pl-10 rounded-lg border-2 border-red-300 px-3 py-3 text-gray-900 bg-white font-semibold text-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                placeholder="0"
+              />
           </div>
         </div>
 

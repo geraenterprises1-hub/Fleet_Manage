@@ -157,11 +157,12 @@ export default function DriverDashboard() {
         });
       }
       
-      if (formData.uber_proof) {
+      // Only append files if they exist and have content
+      if (formData.uber_proof && formData.uber_proof.size > 0) {
         formDataToSend.append('uber_proof', formData.uber_proof);
       }
       
-      if (formData.rapido_proof) {
+      if (formData.rapido_proof && formData.rapido_proof.size > 0) {
         formDataToSend.append('rapido_proof', formData.rapido_proof);
       }
 

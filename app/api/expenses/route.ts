@@ -332,24 +332,12 @@ async function postHandler(req: NextRequest & { user?: any }) {
     }
 
     const receipts = formData.getAll('receipts') as File[];
-    const uber_proof = formData.get('uber_proof') as File | null;
-    const rapido_proof = formData.get('rapido_proof') as File | null;
-
-    // Validate mandatory screenshots for drivers
-    if (role === 'driver') {
-      if (!uber_proof || uber_proof.size === 0) {
-        return NextResponse.json(
-          { error: 'Uber screenshot is required' },
-          { status: 400 }
-        );
-      }
-      if (!rapido_proof || rapido_proof.size === 0) {
-        return NextResponse.json(
-          { error: 'Rapido screenshot is required' },
-          { status: 400 }
-        );
-      }
-    }
+    const uber_proof_raw = formData.get('uber_proof');
+    const rapido_proof_raw = formData.get('rapido_proof');
+    
+    // Handle null, undefined, or empty file objects
+    const uber_proof = (uber_proof_raw && (uber_proof_raw as File).size > 0) ? (uber_proof_raw as File) : null;
+    const rapido_proof = (rapido_proof_raw && (rapido_proof_raw as File).size > 0) ? (rapido_proof_raw as File) : null;
 
     // Validate that at least one of revenue or expense must be greater than 0
     const amountValue = isNaN(amount) ? 0 : amount;
